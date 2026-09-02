@@ -12,7 +12,7 @@ import json
 # 1. 3D MOLECULAR VISUALIZATION WITH PYMOL/OPENBABEL INTEGRATION
 # =============================================================================
 @dataclass
-class 3dMolecularVisualizationWithPymolopenbabelIntegrationEngineResult:
+class Engine_3dMolecularVisualizationWithPymolopenbabelIntegrationEngineResult:
     feature_name: str = "3D Molecular Visualization with PyMOL/OpenBabel Integration"
     status: str = "OPTIMAL"
     score: float = 0.0
@@ -21,16 +21,16 @@ class 3dMolecularVisualizationWithPymolopenbabelIntegrationEngineResult:
     recommendations: List[str] = field(default_factory=list)
     timestamp: str = field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc).isoformat())
 
-class 3dMolecularVisualizationWithPymolopenbabelIntegrationEngine:
+class Engine_3dMolecularVisualizationWithPymolopenbabelIntegrationEngine:
     """
     3D Molecular Visualization with PyMOL/OpenBabel Integration: **Goal:** Render docking poses with Vina scoring decomposition in 3D.
     """
     def __init__(self, threshold: float = 1.0, config: Optional[Dict[str, Any]] = None):
         self.threshold = threshold
         self.config = config or {}
-        self.history: List[3dMolecularVisualizationWithPymolopenbabelIntegrationEngineResult] = []
+        self.history: List[Engine_3dMolecularVisualizationWithPymolopenbabelIntegrationEngineResult] = []
 
-    def evaluate(self, primary_value: float, secondary_value: float = 0.0, **kwargs) -> 3dMolecularVisualizationWithPymolopenbabelIntegrationEngineResult:
+    def evaluate(self, primary_value: float, secondary_value: float = 0.0, **kwargs) -> Engine_3dMolecularVisualizationWithPymolopenbabelIntegrationEngineResult:
         alerts = []
         recs = []
         status = "OPTIMAL"
@@ -47,7 +47,7 @@ class 3dMolecularVisualizationWithPymolopenbabelIntegrationEngine:
         else:
             recs.append("Parameters nominal under standard operating bounds.")
 
-        res = 3dMolecularVisualizationWithPymolopenbabelIntegrationEngineResult(
+        res = Engine_3dMolecularVisualizationWithPymolopenbabelIntegrationEngineResult(
             feature_name="3D Molecular Visualization with PyMOL/OpenBabel Integration",
             status=status,
             score=score,
@@ -414,7 +414,7 @@ class TestingEngine:
 class MoleculardockingvinascorerEnrichmentSuite:
     """Master coordinator executing all enriched domain features."""
     def __init__(self):
-        self.3dmolecularvisualiza = 3dMolecularVisualizationWithPymolopenbabelIntegrationEngine()
+        self.engine_3dmolecularvisualiza = Engine_3dMolecularVisualizationWithPymolopenbabelIntegrationEngine()
         self.implementationengine = ImplementationEngine()
         self.dependenciesengine = DependenciesEngine()
         self.testingengine = TestingEngine()
@@ -425,7 +425,7 @@ class MoleculardockingvinascorerEnrichmentSuite:
 
     def execute_all(self, primary_val: float = 1.5, secondary_val: float = 0.5) -> Dict[str, Any]:
         results = {}
-        results["3dMolecularVisualizationWithPymolopenbabelIntegrationEngine"] = self.3dmolecularvisualiza.evaluate(primary_val, secondary_val)
+        results["Engine_3dMolecularVisualizationWithPymolopenbabelIntegrationEngine"] = self.engine_3dmolecularvisualiza.evaluate(primary_val, secondary_val)
         results["ImplementationEngine"] = self.implementationengine.evaluate(primary_val, secondary_val)
         results["DependenciesEngine"] = self.dependenciesengine.evaluate(primary_val, secondary_val)
         results["TestingEngine"] = self.testingengine.evaluate(primary_val, secondary_val)
