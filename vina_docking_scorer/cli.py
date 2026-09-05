@@ -4,6 +4,7 @@ CLI module for Molecular Docking Score Calculator.
 import argparse
 import json
 import sys
+from pathlib import Path
 
 from .engine import (
     Atom, Molecule,
@@ -13,12 +14,28 @@ from .engine import (
     estimate_admet, full_docking_analysis,
 )
 
+# Import audit components with graceful fallback
+try:
+    from agents.base import AuditLogger
+    from agents.supervisor import SystemSupervisor
+    from agents.models import SystemTaskPayload
+    _AUDIT_AVAILABLE = True
+except ImportError:
+    _AUDIT_AVAILABLE = False
+
 
 def _load_molecules(filepath: str):
     """Load ligand and receptor atoms from JSON."""
-    with open(filepath, 'r') as f:
+    path = Path(filepath)
+    if not path.is_file():
+        raise FileNotFoundError(f"Input file not found: {filepath}")
+
+    with open(path, 'r') as f:
         data = json.load(f)
-    
+
+    if not isinstance(data, dict):
+        raise ValueError("Input JSON must be an object with 'ligand' and 'receptor' keys")
+
     ligand_atoms = []
     for a in data.get('ligand', {}).get('atoms', []):
         ligand_atoms.append(Atom(
@@ -28,7 +45,7 @@ def _load_molecules(filepath: str):
             is_acceptor=a.get('acceptor', False),
             is_hydrophobic=a.get('hydrophobic', False),
         ))
-    
+
     receptor_atoms = []
     for a in data.get('receptor', {}).get('atoms', []):
         receptor_atoms.append(Atom(
@@ -38,7 +55,7 @@ def _load_molecules(filepath: str):
             is_acceptor=a.get('acceptor', False),
             is_hydrophobic=a.get('hydrophobic', False),
         ))
-    
+
     props = data.get('ligand', {}).get('properties', {})
     return ligand_atoms, receptor_atoms, props
 
@@ -173,19 +190,67 @@ def cmd_affinity(args):
     return 0
 
 
+def cmd_audit(args):
+    """Run audit task through the enterprise supervisor."""
+    if not _AUDIT_AVAILABLE:
+        print("Error: audit components not available. Install with: pip install pydantic", file=sys.stderr)
+        return 1
+
+    supervisor = SystemSupervisor(model_provider="mock")
+    payload = SystemTaskPayload(
+        task_id=args.task_id,
+        target_identifier=args.target_id or "DEFAULT-TARGET",
+        primary_metric=args.primary or 10.0,
+        secondary_metric=args.secondary or 5.0,
+        status_descriptor=args.status or "NOMINAL",
+        is_critical_flag=args.critical or False,
+    )
+    dossier = supervisor.process_task(payload)
+    print(json.dumps(dossier.to_dict(), indent=2, default=str))
+    return 0
+
+
+def cmd_chat(args):
+    """Query the supervisory chat interface."""
+    if not _AUDIT_AVAILABLE:
+        print("Error: audit components not available. Install with: pip install pydantic", file=sys.stderr)
+        return 1
+
+    supervisor = SystemSupervisor(model_provider="mock")
+    query = " ".join(args.query) if isinstance(args.query, list) else args.query
+    response = supervisor.query_supervisory_chat(query)
+    print(response)
+    return 0
+
+
+def cmd_verify_audit(args):
+    """Verify the HMAC-SHA256 audit trail integrity."""
+    if not _AUDIT_AVAILABLE:
+        print("Error: audit components not available. Install with: pip install pydantic", file=sys.stderr)
+        return 1
+
+    valid = AuditLogger.verify_integrity()
+    trail_len = len(AuditLogger.get_trail())
+    print(json.dumps({
+        "audit_integrity_valid": valid,
+        "audit_blocks_total": trail_len,
+    }, indent=2))
+    return 0 if valid else 1
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(
         prog='molecular-docking-vina-scorer',
         description='Molecular Docking Score Calculator: Vina-like scoring, Lipinski, ADMET',
     )
     subparsers = parser.add_subparsers(dest='command', required=True)
-    
+
     # Score
     p_score = subparsers.add_parser('score', help='Calculate docking score')
     p_score.add_argument('-i', '--input', required=True, help='JSON with ligand/receptor atoms')
     p_score.add_argument('--rotatable', type=int, default=0, help='Number of rotatable bonds')
     p_score.add_argument('--json', action='store_true', help='JSON output')
-    
+
     # Lipinski
     p_lip = subparsers.add_parser('lipinski', help='Lipinski Rule of 5')
     p_lip.add_argument('--mw', type=float, required=True, help='Molecular weight')
@@ -193,7 +258,7 @@ def main(argv=None):
     p_lip.add_argument('--hbd', type=int, required=True, help='H-bond donors')
     p_lip.add_argument('--hba', type=int, required=True, help='H-bond acceptors')
     p_lip.add_argument('--json', action='store_true', help='JSON output')
-    
+
     # ADMET
     p_admet = subparsers.add_parser('admet', help='ADMET estimation')
     p_admet.add_argument('--mw', type=float, required=True)
@@ -203,22 +268,41 @@ def main(argv=None):
     p_admet.add_argument('--psa', type=float, default=80.0)
     p_admet.add_argument('--rotatable', type=int, default=3)
     p_admet.add_argument('--json', action='store_true', help='JSON output')
-    
+
     # Affinity
     p_aff = subparsers.add_parser('affinity', help='Binding affinity from ΔG')
     p_aff.add_argument('--delta-g', type=float, required=True, help='ΔG in kcal/mol')
     p_aff.add_argument('--temperature', type=float, default=298.15, help='Temperature (K)')
     p_aff.add_argument('--json', action='store_true', help='JSON output')
-    
+
+    # Audit (enterprise supervisor)
+    p_audit = subparsers.add_parser('audit', help='Run task through enterprise supervisor')
+    p_audit.add_argument('--task-id', default='TASK-CLI-01', help='Task identifier')
+    p_audit.add_argument('--target-id', default='TARGET-01', help='Target identifier')
+    p_audit.add_argument('--primary', type=float, default=10.0, help='Primary metric')
+    p_audit.add_argument('--secondary', type=float, default=5.0, help='Secondary metric')
+    p_audit.add_argument('--status', default='NOMINAL', help='Status descriptor')
+    p_audit.add_argument('--critical', action='store_true', help='Critical flag')
+
+    # Chat (supervisory)
+    p_chat = subparsers.add_parser('chat', help='Query supervisory chat interface')
+    p_chat.add_argument('query', nargs='+', help='Query text')
+
+    # Verify audit trail
+    p_verify = subparsers.add_parser('verify-audit', help='Verify HMAC-SHA256 audit integrity')
+
     args = parser.parse_args(argv)
-    
+
     commands = {
         'score': cmd_score,
         'lipinski': cmd_lipinski,
         'admet': cmd_admet,
         'affinity': cmd_affinity,
+        'audit': cmd_audit,
+        'chat': cmd_chat,
+        'verify-audit': cmd_verify_audit,
     }
-    
+
     return commands[args.command](args)
 
 

@@ -392,6 +392,45 @@ def test_cli_score(tmp_path):
     }
     f = tmp_path / 'docking.json'
     f.write_text(json.dumps(data))
-    
+
     from vina_docking_scorer.cli import main
     assert main(['score', '-i', str(f)]) == 0
+
+
+def test_cli_score_file_not_found():
+    """Test CLI score with missing file raises FileNotFoundError."""
+    from vina_docking_scorer.cli import main
+    try:
+        main(['score', '-i', '/nonexistent/path/file.json'])
+        assert False, "Should have raised FileNotFoundError"
+    except FileNotFoundError:
+        pass
+
+
+def test_cli_score_json_output(tmp_path):
+    """Test CLI score with JSON output."""
+    import io
+    from contextlib import redirect_stdout
+
+    data = {
+        'ligand': {
+            'atoms': [{'element': 'C', 'x': 0, 'y': 0, 'z': 0}],
+            'properties': {},
+        },
+        'receptor': {
+            'atoms': [{'element': 'C', 'x': 3, 'y': 0, 'z': 0}],
+        },
+    }
+    f = tmp_path / 'docking.json'
+    f.write_text(json.dumps(data))
+
+    from vina_docking_scorer.cli import main
+
+    captured = io.StringIO()
+    with redirect_stdout(captured):
+        result = main(['score', '-i', str(f), '--json'])
+
+    assert result == 0
+    output = json.loads(captured.getvalue())
+    assert 'score_components' in output
+    assert 'binding_affinity' in output
