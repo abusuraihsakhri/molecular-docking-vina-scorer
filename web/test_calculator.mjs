@@ -28,7 +28,7 @@ test("descriptor screening and affinity", () => {
   assert.equal(lipinski(300,2.5,2,4).passes,true);
   assert.equal(lipinski(600,6,6,11).violations,4);
   assert.equal(admet(300,2,2,4,80,3).absorption,"high");
-  assert.equal(affinity(-7).classification,"moderate" === affinity(-7).classification ? "moderate" : affinity(-7).classification);
+  assert.equal(affinity(-7).classification,"weak");
 });
 
 test("full analysis without server", () => {
