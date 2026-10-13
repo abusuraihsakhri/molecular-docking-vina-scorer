@@ -40,14 +40,14 @@ export function score(ligandAtoms, receptorAtoms, rotatable = 0) {
   for (const a of ligandAtoms) {
     for (const b of receptorAtoms) {
       const d = Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
-      raw.gauss1 += Math.exp(-((d - 3) / .5) ** 2);
-      raw.gauss2 += Math.exp(-((d - 3) / 2) ** 2);
+      raw.gauss1 += Math.exp(-(((d - 3) / .5) ** 2));
+      raw.gauss2 += Math.exp(-(((d - 3) / 2) ** 2));
       if (d < 2) raw.repulsion += (2 - d) ** 2;
       if (a.hydrophobic && b.hydrophobic) {
         raw.hydrophobic += d <= 1.5 ? 1 : d >= 4 ? 0 : 1 - (d - 1.5) / 2.5;
       }
       if ((a.donor && b.acceptor) || (a.acceptor && b.donor)) {
-        raw.hbond += Math.exp(-((d - 2.8) / .7) ** 2);
+        raw.hbond += Math.exp(-(((d - 2.8) / .7) ** 2));
       }
     }
   }
