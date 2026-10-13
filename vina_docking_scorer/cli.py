@@ -209,8 +209,8 @@ def cmd_audit(args):
     payload = SystemTaskPayload(
         task_id=args.task_id,
         target_identifier=args.target_id or "DEFAULT-TARGET",
-        primary_metric=args.primary or 10.0,
-        secondary_metric=args.secondary or 5.0,
+        primary_metric=args.primary,
+        secondary_metric=args.secondary,
         status_descriptor=args.status or "NOMINAL",
         is_critical_flag=args.critical or False,
     )
