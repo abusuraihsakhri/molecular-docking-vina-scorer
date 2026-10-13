@@ -168,6 +168,12 @@ def calculate_vina_score(ligand_atoms: List[Atom],
     
     Score = w1*Gauss1 + w2*Gauss2 + w3*Repulsion + w4*Hydrophobic + w5*HBond + w6*NumRot
     """
+    if not isinstance(num_rotatable_bonds, int) or num_rotatable_bonds < 0:
+        raise ValueError("num_rotatable_bonds must be a non-negative integer")
+    if any(not all(math.isfinite(v) for v in (a.x, a.y, a.z))
+           for a in (*ligand_atoms, *receptor_atoms)):
+        raise ValueError("Atom coordinates must be finite")
+
     gauss1_total = 0.0
     gauss2_total = 0.0
     repulsion_total = 0.0
@@ -222,13 +228,14 @@ def score_to_binding_affinity(score: float, temperature: float = T_DEFAULT) -> B
     Score (kcal/mol) ≈ ΔG_binding
     Ki = e^(ΔG / RT)
     """
+    if not math.isfinite(score) or not math.isfinite(temperature) or temperature <= 0:
+        raise ValueError("score must be finite and temperature must be positive and finite")
     rt = R_GAS * temperature
-    delta_g = score  # score is in kcal/mol
-    
-    if rt == 0:
-        ki = float('inf')
-    else:
-        ki = math.exp(delta_g / rt)
+    delta_g = score  # kcal/mol, meaningful for calibrated free energies only
+    exponent = delta_g / rt
+    if not -700 <= exponent <= 680:
+        raise ValueError("Energy/temperature combination is outside the numeric range")
+    ki = math.exp(exponent)
     
     ki_nm = ki * 1e9  # convert to nanomolar
     kd = ki  # simplified: Kd ≈ Ki
