@@ -35,3 +35,6 @@ test = [
 [project.urls]
 Homepage = "https://github.com/abusuraihsakhri/molecular-docking-vina-scorer"
 Repository = "https://github.com/abusuraihsakhri/molecular-docking-vina-scorer.git"
+
+[tool.setuptools.packages.find]
+include = ["vina_docking_scorer*", "agents*"]
