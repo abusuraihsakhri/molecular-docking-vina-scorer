@@ -1,236 +1,199 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Molecular Docking Vina Scorer — Operations Console</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #090d16;
-            --card: #111827;
-            --border: #1f293d;
-            --accent: #3b82f6;
-            --accent-glow: rgba(59, 130, 246, 0.25);
-            --text: #f3f4f6;
-            --text-muted: #9ca3af;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --success: #10b981;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            padding: 2rem;
-            min-height: 100vh;
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        .header-title h1 { font-size: 1.6rem; font-weight: 700; color: #fff; }
-        .header-title p { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem; }
-        .badge {
-            display: inline-block;
-            padding: 0.3rem 0.8rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            background: var(--accent-glow);
-            color: var(--accent);
-            border: 1px solid var(--accent);
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1.2fr;
-            gap: 1.5rem;
-        }
-        .card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-        }
-        .card h2 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .form-group { margin-bottom: 1rem; }
-        label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.4rem; }
-        input, select, textarea {
-            width: 100%;
-            padding: 0.65rem 0.9rem;
-            background: #0d1322;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: #fff;
-            font-family: inherit;
-            font-size: 0.9rem;
-        }
-        input:focus, textarea:focus { outline: none; border-color: var(--accent); }
-        .btn {
-            background: var(--accent);
-            color: #fff;
-            border: none;
-            padding: 0.7rem 1.4rem;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-            width: 100%;
-        }
-        .btn:hover { background: #2563eb; }
-        .terminal {
-            background: #060911;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem;
-            color: #10b981;
-            height: 380px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-        }
-        .metrics-bar {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        .metric-box {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
-            text-align: center;
-        }
-        .metric-val { font-size: 1.4rem; font-weight: 700; color: #fff; margin-top: 0.25rem; }
-        .metric-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Molecular Docking Vina-like Scorer</title>
+  <style>
+    :root { color-scheme:dark; --bg:#0b1220;--panel:#111d30;--edge:#34445c;--text:#eff5ff;--muted:#b7c4d8;--accent:#72c6ff;--error:#ffb2b2; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif; }
+    main { max-width:1200px; margin:0 auto; padding:28px 20px 60px; }
+    h1 { font-size:clamp(1.5rem,3vw,2.1rem);margin:0 0 4px; }
+    h2 { margin:0 0 15px; font-size:1.13rem; }
+    h3 {font-size:1rem;margin:0 0 8px;}
+    p { margin:6px 0 12px; }
+    .subtle {color:var(--muted);}
+    .warning { border-left:3px solid var(--accent); padding:9px 14px; background:#142840; margin:18px 0 22px; }
+    .layout { display:grid; grid-template-columns:minmax(0,1.12fr) minmax(0,.88fr); gap:18px; }
+    .panel { padding:19px; border:1px solid var(--edge); border-radius:12px; background:var(--panel); min-width:0; }
+    label {display:block;font-weight:600;margin-bottom:8px;}
+    textarea,input { width:100%;border-radius:7px;border:1px solid #667991;background:#091425;color:var(--text);padding:11px; font:inherit; }
+    textarea {min-height:340px;resize:vertical;font:13px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;tab-size:2;}
+    button, .file-label { display:inline-flex;align-items:center;justify-content:center; cursor:pointer; border:1px solid #8aa4c1;border-radius:7px;background:#213953;color:#f5f8ff;font:600 14px/1.2 system-ui;padding:11px 15px; }
+    button.primary {background:#12629b;border-color:#58b2f1;}
+    button:hover,.file-label:hover {filter:brightness(1.15);}
+    button:focus-visible,input:focus-visible,textarea:focus-visible,summary:focus-visible {outline:3px solid var(--accent);outline-offset:2px;}
+    button:disabled {opacity:.48;cursor:not-allowed;}
+    .controls {display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:center;}
+    input[type=file] {position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;}
+    .summary {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px;}
+    .metric {padding:12px;background:#0b1829;border:1px solid var(--edge);border-radius:8px;}
+    .metric span {display:block;color:var(--muted);font-size:.8rem;}
+    .metric strong {display:block;font-size:1.15rem;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;}
+    pre {font:12px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;background:#091425;color:#def1ff;padding:14px;border-radius:8px;min-height:185px;max-height:430px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;}
+    .error {color:var(--error);min-height:1.5em;}
+    details {margin-top:20px;}
+    summary {font-weight:650;cursor:pointer;}
+    .audit-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:13px;}
+    .audit-grid label {font-size:.86rem;}
+    .audit-grid input {margin-top:4px;}
+    .note {font-size:.87rem;color:var(--muted);}
+    footer {margin-top:24px;font-size:.88rem;color:var(--muted);}
+    a {color:#96d7ff;}
+    @media(max-width:760px){main{padding:19px 13px 40px}.layout{grid-template-columns:1fr}textarea{min-height:290px}.panel{padding:15px}.audit-grid{grid-template-columns:1fr}}
+  </style>
 </head>
 <body>
-
-    <div class="header">
-        <div class="header-title">
-            <h1>Molecular Docking Vina Scorer</h1>
-            <p>Domain: Clinical & Cryptographic AI | Standard: CAP / CLSI / NIST Standards | LabMind-Atlas Architecture</p>
-        </div>
-        <div>
-            <span class="badge">Air-Gapped Active</span>
-            <span class="badge" style="background: rgba(16,185,129,0.2); color: #10b981; border-color: #10b981;">Zero-PHI Guard Active</span>
-        </div>
-    </div>
-
-    <div class="metrics-bar">
-        <div class="metric-box">
-            <div class="metric-label">System Status</div>
-            <div class="metric-val" style="color: var(--success);" id="m-status">OPTIMAL</div>
-        </div>
-        <div class="metric-box">
-            <div class="metric-label">Tasks Processed</div>
-            <div class="metric-val" id="m-tasks">142</div>
-        </div>
-        <div class="metric-box">
-            <div class="metric-label">Audit Blocks Signed</div>
-            <div class="metric-val" id="m-audit">142</div>
-        </div>
-        <div class="metric-box">
-            <div class="metric-label">PHI Interceptions</div>
-            <div class="metric-val" style="color: var(--accent);" id="m-phi">0</div>
-        </div>
-    </div>
-
-    <div class="grid">
-        <div class="card">
-            <h2>⚙️ Dispatch Distributed Component Audit</h2>
-            <div class="form-group">
-                <label>Task / Sample ID</label>
-                <input type="text" id="task_id" value="TASK-2026-LIVE-01">
-            </div>
-            <div class="form-group">
-                <label>Target Identifier</label>
-                <input type="text" id="target_id" value="SPECIMEN-ALPHA-77">
-            </div>
-            <div class="form-group">
-                <label>Primary Measurement / Value</label>
-                <input type="number" id="primary_metric" value="29.4" step="0.1">
-            </div>
-            <div class="form-group">
-                <label>Secondary Metric / Kinetic Index</label>
-                <input type="number" id="secondary_metric" value="14.8" step="0.1">
-            </div>
-            <div class="form-group">
-                <label>Status / Phenotype Descriptor</label>
-                <input type="text" id="status_descriptor" value="DISCORDANT_ANOMALY">
-            </div>
-            <div class="form-group">
-                <label><input type="checkbox" id="is_critical" checked> Trigger Emergency / Critical Flag</label>
-            </div>
-            <button class="btn" onclick="runAudit()">Execute Distributed Component Audit</button>
-        </div>
-
-        <div class="card">
-            <h2>📊 Real-Time Consensus Dossier & Audit Log</h2>
-            <div class="terminal" id="outputConsole">// Molecular Docking Vina Scorer Operations Console Ready
-// Connection established with Air-Gapped Supervisor
-// Cryptographic HMAC-SHA256 audit ledger loaded.
-// Ready for live task payload dispatch...</div>
-        </div>
-    </div>
-
-    <script>
-        async function runAudit() {
-            const consoleEl = document.getElementById('outputConsole');
-            consoleEl.innerText = "// Dispatching task across specialized workers...
-// Invoking InvariantQCWorker, SafetyEscalationWorker, ProtocolWorker...";
-
-            const payload = {
-                task_id: document.getElementById('task_id').value,
-                target_identifier: document.getElementById('target_id').value,
-                primary_metric: parseFloat(document.getElementById('primary_metric').value),
-                secondary_metric: parseFloat(document.getElementById('secondary_metric').value),
-                status_descriptor: document.getElementById('status_descriptor').value,
-                is_critical_flag: document.getElementById('is_critical').checked
-            };
-
-            try {
-                const res = await fetch('/api/audit', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                consoleEl.innerText = JSON.stringify(data, null, 2);
-                document.getElementById('m-tasks').innerText = parseInt(document.getElementById('m-tasks').innerText) + 1;
-                document.getElementById('m-audit').innerText = parseInt(document.getElementById('m-audit').innerText) + 1;
-            } catch (err) {
-                consoleEl.innerText = "// Offline / Simulation Output:\n" + JSON.stringify({
-                    dossier_id: "DOSSIER-SIM-" + Math.floor(Math.random()*10000),
-                    system: "molecular-docking-vina-scorer",
-                    domain: "Clinical & Cryptographic AI",
-                    task_id: payload.task_id,
-                    overall_urgency: payload.is_critical_flag ? "CRITICAL_STAT_PANIC" : "ELEVATED_RISK",
-                    integrity_status: "DISCORDANT_ANOMALY",
-                    alerts: [
-                        { worker: "InvariantQCWorker", alert: "Primary metric exceeds upper reference bound" },
-                        { worker: "SafetyEscalationWorker", alert: "Critical emergency interlock flag active" }
-                    ],
-                    audit_hash: "HMAC_SHA256_e83f9a72b941d6c381f9"
-                }, null, 2);
-            }
-        }
-    </script>
+<main>
+  <header>
+    <h1>Molecular Docking Vina-like Scorer</h1>
+    <p class="subtle">Atom-pair interaction terms · Lipinski screening · Descriptor-based ADMET heuristics</p>
+  </header>
+  <div class="warning" role="note">
+    <strong>Scientific limitation:</strong> This is an educational scoring approximation of a supplied 3D pose, not an AutoDock Vina docking search or calibrated affinity predictor. Reported Ki/Kd values are illustrative transformations of the heuristic score, not experimental estimates. Do not use these results for clinical or drug-development decisions.
+  </div>
+  <div class="layout">
+    <section class="panel" aria-labelledby="input-title">
+      <h2 id="input-title">Molecular input</h2>
+      <label for="molecules">JSON: ligand, receptor and optional ligand properties</label>
+      <textarea id="molecules" spellcheck="false" aria-describedby="input-help">{
+  "ligand": {
+    "atoms": [
+      {"element":"C","x":0,"y":0,"z":0,"hydrophobic":true},
+      {"element":"N","x":1.5,"y":0,"z":0,"donor":true},
+      {"element":"O","x":0,"y":1.5,"z":0,"acceptor":true}
+    ],
+    "properties": {
+      "rotatable_bonds":2,"mw":350,"logp":2.5,
+      "hbd":2,"hba":4,"psa":80
+    }
+  },
+  "receptor": {
+    "atoms": [
+      {"element":"C","x":3,"y":0,"z":0,"hydrophobic":true},
+      {"element":"O","x":3,"y":2,"z":0,"acceptor":true},
+      {"element":"N","x":3,"y":-1,"z":1,"donor":true}
+    ]
+  }
+}</textarea>
+      <p class="note" id="input-help">Coordinates in Å. Each molecule supports 1–128 atoms. All calculations run in your browser; your JSON is not uploaded.</p>
+      <div class="controls">
+        <button type="button" class="primary" id="calculate">Calculate score</button>
+        <button type="button" id="example">Restore example</button>
+        <label class="file-label" for="upload">Open JSON file</label>
+        <input type="file" id="upload" accept=".json,application/json" aria-label="Open molecular JSON file">
+      </div>
+      <p id="input-error" class="error" role="alert" aria-live="polite"></p>
+    </section>
+    <section class="panel" aria-labelledby="result-title">
+      <h2 id="result-title">Computed result</h2>
+      <div class="summary" aria-live="polite">
+        <div class="metric"><span>Heuristic score</span><strong id="total">—</strong></div>
+        <div class="metric"><span>Illustrative Ki</span><strong id="ki">—</strong></div>
+        <div class="metric"><span>Lipinski rule</span><strong id="lipinski">—</strong></div>
+        <div class="metric"><span>Absorption heuristic</span><strong id="absorption">—</strong></div>
+      </div>
+      <label for="result">Full calculation details</label>
+      <pre id="result" aria-live="polite">Choose “Calculate score” to evaluate the supplied pose.</pre>
+      <div class="controls">
+        <button type="button" id="download" disabled>Download result JSON</button>
+      </div>
+    </section>
+  </div>
+  <details class="panel">
+    <summary>Backend-only supervisory audit (requires the FastAPI server)</summary>
+    <p class="note">The audit uses generic operational thresholds and does not score docking poses. On GitHub Pages it is unavailable; no demonstration data is represented as an actual audit.</p>
+    <form id="audit-form">
+      <div class="audit-grid">
+        <label>Task ID<input name="task_id" value="TASK-01" required maxlength="100"></label>
+        <label>Target identifier<input name="target_identifier" value="TARGET-01" required maxlength="100"></label>
+        <label>Primary metric<input name="primary_metric" type="number" step="any" value="28.5" required></label>
+        <label>Secondary metric<input name="secondary_metric" type="number" step="any" value="14.2" required></label>
+        <label>Status descriptor<input name="status_descriptor" value="DISCORDANT_ANOMALY" maxlength="200"></label>
+        <label><input type="checkbox" name="is_critical_flag" style="width:auto"> Critical flag</label>
+      </div>
+      <div class="controls"><button type="submit">Run backend audit</button></div>
+    </form>
+    <p id="audit-error" class="error" role="alert" aria-live="polite"></p>
+    <pre id="audit-result">No audit requested.</pre>
+  </details>
+  <footer>Uses simplified distance potentials, not receptor preparation, conformational sampling, or force-field minimization. <a href="https://github.com/abusuraihsakhri/molecular-docking-vina-scorer">Source and documentation</a>.</footer>
+</main>
+<script type="module">
+  import { analyze } from "./calculator.mjs";
+  const $ = id => document.getElementById(id);
+  const original = $("molecules").value;
+  let lastResult = null;
+  $("calculate").addEventListener("click", () => {
+    $("input-error").textContent = "";
+    lastResult = null;
+    $("download").disabled = true;
+    try {
+      const input = JSON.parse($("molecules").value);
+      const result = analyze(input);
+      lastResult = result;
+      $("total").textContent = result.score.total.toFixed(4) + " (heuristic)";
+      $("ki").textContent = result.binding_affinity.ki_nm.toExponential(2) + " nM";
+      $("lipinski").textContent = result.lipinski ? (result.lipinski.passes ? "Pass" : "Fail") : "Not supplied";
+      $("absorption").textContent = result.admet?.absorption ?? "Not supplied";
+      $("result").textContent = JSON.stringify(result, null, 2);
+      $("download").disabled = false;
+    } catch (error) {
+      $("total").textContent = $("ki").textContent = $("lipinski").textContent = $("absorption").textContent = "—";
+      $("result").textContent = "Calculation could not be completed.";
+      $("input-error").textContent = error.message;
+    }
+  });
+  $("example").addEventListener("click", () => {
+    $("molecules").value = original;
+    $("input-error").textContent = "";
+    $("calculate").click();
+  });
+  $("upload").addEventListener("change", async event => {
+    const file = event.target.files[0];
+    if (!file) return;
+    if (file.size > 1024 * 1024) {
+      $("input-error").textContent = "JSON file exceeds the 1 MB limit.";
+    } else {
+      $("molecules").value = await file.text();
+      $("calculate").click();
+    }
+    event.target.value = "";
+  });
+  $("download").addEventListener("click", () => {
+    if (!lastResult) return;
+    const url = URL.createObjectURL(new Blob([JSON.stringify(lastResult, null, 2)], {type:"application/json"}));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "docking-analysis.json";
+    anchor.click();
+    URL.revokeObjectURL(url);
+  });
+  $("audit-form").addEventListener("submit", async event => {
+    event.preventDefault();
+    $("audit-error").textContent = "";
+    const form = new FormData(event.currentTarget);
+    const payload = {
+      task_id: String(form.get("task_id")),
+      target_identifier: String(form.get("target_identifier")),
+      primary_metric: Number(form.get("primary_metric")),
+      secondary_metric: Number(form.get("secondary_metric")),
+      status_descriptor: String(form.get("status_descriptor")),
+      is_critical_flag: form.has("is_critical_flag")
+    };
+    try {
+      const response = await fetch("./api/audit", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+      if (!response.ok) throw new Error(`Audit API unavailable or rejected request (HTTP ${response.status}). Run the FastAPI backend to use this feature.`);
+      const data = await response.json();
+      $("audit-result").textContent = JSON.stringify(data, null, 2);
+    } catch (error) {
+      $("audit-result").textContent = "No audit result.";
+      $("audit-error").textContent = error.message;
+    }
+  });
+  $("calculate").click();
+</script>
 </body>
 </html>
