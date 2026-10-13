@@ -23,3 +23,11 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+# Python environments, coverage and linters
+.venv/
+venv/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
