@@ -24,7 +24,7 @@ Open `http://localhost:8080/`. Paste a JSON structure containing ligand/receptor
 
 ## Python install and CLI
 
-Requires Python 3.9+:
+Requires Python 3.10+:
 
 ```bash
 python -m pip install -e ".[test]"
