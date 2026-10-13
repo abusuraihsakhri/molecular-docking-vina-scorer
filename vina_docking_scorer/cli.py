@@ -63,7 +63,7 @@ def _load_molecules(filepath: str):
 def cmd_score(args):
     """Calculate docking score."""
     ligand_atoms, receptor_atoms, props = _load_molecules(args.input)
-    num_rot = args.rotatable or props.get('rotatable_bonds', 0)
+    num_rot = args.rotatable if args.rotatable is not None else props.get('rotatable_bonds', 0)
     
     score = calculate_vina_score(ligand_atoms, receptor_atoms, num_rot)
     affinity = score_to_binding_affinity(score.total)
@@ -248,7 +248,7 @@ def main(argv=None):
     # Score
     p_score = subparsers.add_parser('score', help='Calculate docking score')
     p_score.add_argument('-i', '--input', required=True, help='JSON with ligand/receptor atoms')
-    p_score.add_argument('--rotatable', type=int, default=0, help='Number of rotatable bonds')
+    p_score.add_argument('--rotatable', type=int, default=None, help='Number of rotatable bonds')
     p_score.add_argument('--json', action='store_true', help='JSON output')
 
     # Lipinski
