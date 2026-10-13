@@ -113,7 +113,7 @@ export function analyze(input) {
   const rotatable = input.rotatable_bonds ?? p.rotatable_bonds ?? 0;
   const energy = score(input.ligand.atoms, input.receptor.atoms, rotatable);
   const out = { score: energy, binding_affinity: affinity(energy.total, input.temperature ?? 298.15), lipinski: null, admet: null };
-  if (p.mw != null) {
+  if (p.mw != null && p.mw !== 0) {
     out.lipinski = lipinski(p.mw, p.logp ?? 0, p.hbd ?? 0, p.hba ?? 0);
     out.admet = admet(p.mw, p.logp ?? 0, p.hbd ?? 0, p.hba ?? 0, p.psa ?? 80, rotatable);
   }
