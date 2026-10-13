@@ -75,6 +75,14 @@ def api_score(request: ScoreRequest):
     return asdict(result)
 
 
+@app.get("/calculator.mjs", include_in_schema=False)
+def browser_calculator():
+    return FileResponse(
+        Path(__file__).resolve().parent.parent / "web" / "calculator.mjs",
+        media_type="text/javascript",
+    )
+
+
 @app.get("/", include_in_schema=False)
 def index():
     return FileResponse(Path(__file__).resolve().parent.parent / "web" / "index.html")
