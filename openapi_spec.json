@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Molecular Docking Vina Scorer API",
-    "description": "Enterprise Distributed Component Platform (Clinical & Cryptographic AI) adhering to CAP / CLSI / NIST Standards.",
-    "version": "3.0.0-ENTERPRISE",
+    "description": "Educational Vina-like pose scoring with a separate generic operational audit service. Live documentation is available at /openapi.json and /docs.",
+    "version": "3.0.0",
     "contact": {
       "name": "Dr. Abu Suraih Sakhri",
       "url": "https://github.com/abusuraihsakhri"
@@ -25,7 +25,7 @@
         "summary": "Prometheus operational metrics",
         "responses": {
           "200": {
-            "description": "Prometheus text metrics"
+            "description": "JSON counters (not Prometheus text)"
           }
         }
       }
@@ -107,6 +107,190 @@
         "responses": {
           "200": {
             "description": "Cryptographic audit trail"
+          }
+        }
+      }
+    },
+    "/api/score": {
+      "post": {
+        "summary": "Calculate simplified Vina-like pose score",
+        "description": "Calculates a heuristic potential for already positioned atoms; does not run docking or validate binding affinity.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "ligand",
+                  "receptor"
+                ],
+                "properties": {
+                  "ligand": {
+                    "type": "object",
+                    "required": [
+                      "atoms"
+                    ],
+                    "properties": {
+                      "atoms": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 128,
+                        "items": {
+                          "type": "object",
+                          "required": [
+                            "element",
+                            "x",
+                            "y",
+                            "z"
+                          ],
+                          "properties": {
+                            "element": {
+                              "type": "string"
+                            },
+                            "x": {
+                              "type": "number"
+                            },
+                            "y": {
+                              "type": "number"
+                            },
+                            "z": {
+                              "type": "number"
+                            },
+                            "donor": {
+                              "type": "boolean"
+                            },
+                            "acceptor": {
+                              "type": "boolean"
+                            },
+                            "hydrophobic": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      },
+                      "properties": {
+                        "type": "object",
+                        "properties": {
+                          "rotatable_bonds": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "mw": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "logp": {
+                            "type": "number"
+                          },
+                          "hbd": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "hba": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "psa": {
+                            "type": "number",
+                            "minimum": 0
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "receptor": {
+                    "type": "object",
+                    "required": [
+                      "atoms"
+                    ],
+                    "properties": {
+                      "atoms": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 128,
+                        "items": {
+                          "type": "object",
+                          "required": [
+                            "element",
+                            "x",
+                            "y",
+                            "z"
+                          ],
+                          "properties": {
+                            "element": {
+                              "type": "string"
+                            },
+                            "x": {
+                              "type": "number"
+                            },
+                            "y": {
+                              "type": "number"
+                            },
+                            "z": {
+                              "type": "number"
+                            },
+                            "donor": {
+                              "type": "boolean"
+                            },
+                            "acceptor": {
+                              "type": "boolean"
+                            },
+                            "hydrophobic": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      },
+                      "properties": {
+                        "type": "object",
+                        "properties": {
+                          "rotatable_bonds": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "mw": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "logp": {
+                            "type": "number"
+                          },
+                          "hbd": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "hba": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "psa": {
+                            "type": "number",
+                            "minimum": 0
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "temperature": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "rotatable_bonds": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Score components and optional descriptor heuristics"
+          },
+          "422": {
+            "description": "Invalid molecular input"
           }
         }
       }
