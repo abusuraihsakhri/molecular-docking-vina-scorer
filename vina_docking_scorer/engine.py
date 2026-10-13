@@ -278,6 +278,11 @@ def lipinski_rule_of_5(mw: float, logp: float, hbd: int, hba: int) -> LipinskiRe
     
     Returns pass/fail and violation details.
     """
+    if not math.isfinite(mw) or mw <= 0 or not math.isfinite(logp):
+        raise ValueError("mw must be positive and logp must be finite")
+    if any(not isinstance(v, int) or v < 0 for v in (hbd, hba)):
+        raise ValueError("hbd and hba must be non-negative integers")
+
     violations = []
     
     if mw > 500:
@@ -309,7 +314,9 @@ def extended_lipinski(mw: float, logp: float, hbd: int, hba: int,
     - PSA ≤ 140 Å²
     """
     lipinski = lipinski_rule_of_5(mw, logp, hbd, hba)
-    
+    if not math.isfinite(psa) or psa < 0 or not isinstance(num_rotatable, int) or num_rotatable < 0:
+        raise ValueError("psa and rotatable bonds must be non-negative")
+
     veber_violations = []
     if num_rotatable > 10:
         veber_violations.append(f"Rotatable bonds {num_rotatable} > 10")
@@ -333,6 +340,10 @@ def estimate_admet(mw: float, logp: float, hbd: int, hba: int,
     Uses empirical rules based on molecular properties.
     This is a simplified model for educational purposes.
     """
+    lipinski_rule_of_5(mw, logp, hbd, hba)
+    if not math.isfinite(psa) or psa < 0 or not isinstance(num_rotatable, int) or num_rotatable < 0:
+        raise ValueError("psa and rotatable bonds must be non-negative")
+
     # Absorption (based on LogP, PSA, MW)
     if logp < 0 or logp > 5 or psa > 140 or mw > 500:
         absorption = 'low'
