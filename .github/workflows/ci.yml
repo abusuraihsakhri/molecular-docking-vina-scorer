@@ -36,3 +36,11 @@ jobs:
         run: |
           node --check web/calculator.mjs
           node --test web/test_calculator.mjs
+      - name: Audit installed Python dependencies
+        if: matrix.python-version == '3.12'
+        run: |
+          python -m pip install pip-audit
+          python -m pip_audit --strict
+      - name: Build runtime Docker image
+        if: matrix.python-version == '3.12'
+        run: docker build -t molecular-docking-vina-scorer:test .
