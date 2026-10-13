@@ -1,0 +1,24 @@
+{
+  "ligand": {
+    "atoms": [
+      {"element": "C", "x": 0, "y": 0, "z": 0, "hydrophobic": true},
+      {"element": "N", "x": 1.5, "y": 0, "z": 0, "donor": true},
+      {"element": "O", "x": 0, "y": 1.5, "z": 0, "acceptor": true}
+    ],
+    "properties": {
+      "rotatable_bonds": 2,
+      "mw": 350,
+      "logp": 2.5,
+      "hbd": 2,
+      "hba": 4,
+      "psa": 80
+    }
+  },
+  "receptor": {
+    "atoms": [
+      {"element": "C", "x": 3, "y": 0, "z": 0, "hydrophobic": true},
+      {"element": "O", "x": 3, "y": 2, "z": 0, "acceptor": true},
+      {"element": "N", "x": 3, "y": -1, "z": 1, "donor": true}
+    ]
+  }
+}

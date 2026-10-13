@@ -1,110 +1,61 @@
+"""Compatibility adapters for the separate operational audit subsystem.
+
+These classes use the supported agents.models and agents.supervisor APIs.
+They do not perform molecular docking calculations.
 """
-Distributed Component Coordination & Executive Hierarchy for VinaScore-Agent: Autonomous Small Molecule Receptor Binding Affinity Predictor.
-Domain: Computational Chemistry & AI Drug Discovery
-"""
-import uuid
-from typing import Dict, Any, List, Optional
-from .models import FrontierPayload, AgentTelemetryAlert, ExecutionStatus
-from .engine import FrontierDomainEngine
+from typing import Any, Dict, List
+
+from agents.models import SystemTaskPayload, AgentAlert
+from agents.workers import (
+    InvariantQCWorker,
+    SafetyEscalationWorker,
+    ProtocolConformanceWorker,
+)
+from agents.supervisor import SystemSupervisor
 
 
 class BindingPocketGridAgent:
-    """Specialized Sub-Agent 1: Primary Parameter & Integrity Auditor."""
-    def audit(self, payload: FrontierPayload) -> List[AgentTelemetryAlert]:
-        alerts = []
-        res = FrontierDomainEngine.evaluate_primary_parameter(payload.primary_metric)
-        if res:
-            alerts.append(AgentTelemetryAlert(
-                alert_id=str(uuid.uuid4())[:8],
-                origin_agent="BindingPocketGridAgent",
-                status=ExecutionStatus.ELEVATED_RISK,
-                summary=res["summary"],
-                technical_details=res["details"],
-                actionable_remediation=res["remediation"],
-            ))
-        return alerts
+    def audit(self, payload: SystemTaskPayload) -> List[AgentAlert]:
+        return InvariantQCWorker.evaluate(payload)
 
 
 class VinaEnergyScoreAgent:
-    """Specialized Sub-Agent 2: Critical Kinetics & Security Safeguard."""
-    def audit(self, payload: FrontierPayload) -> List[AgentTelemetryAlert]:
-        alerts = []
-        res = FrontierDomainEngine.evaluate_secondary_kinetics(payload.secondary_metric, payload.is_critical_flag)
-        if res:
-            alerts.append(AgentTelemetryAlert(
-                alert_id=str(uuid.uuid4())[:8],
-                origin_agent="VinaEnergyScoreAgent",
-                status=ExecutionStatus.CRITICAL_INTERVENTION if payload.is_critical_flag else ExecutionStatus.ELEVATED_RISK,
-                summary=res["summary"],
-                technical_details=res["details"],
-                actionable_remediation=res["remediation"],
-            ))
-        return alerts
+    def audit(self, payload: SystemTaskPayload) -> List[AgentAlert]:
+        return SafetyEscalationWorker.evaluate(payload)
 
 
 class TorsionalStrainPenaltyAgent:
-    """Specialized Sub-Agent 3: Protocol Conformance & Anomaly Triager."""
-    def audit(self, payload: FrontierPayload) -> List[AgentTelemetryAlert]:
-        alerts = []
-        res = FrontierDomainEngine.audit_specification_conformance(payload.status_descriptor, payload.attributes)
-        if res:
-            alerts.append(AgentTelemetryAlert(
-                alert_id=str(uuid.uuid4())[:8],
-                origin_agent="TorsionalStrainPenaltyAgent",
-                status=ExecutionStatus.ELEVATED_RISK,
-                summary=res["summary"],
-                technical_details=res["details"],
-                actionable_remediation=res["remediation"],
-            ))
-        return alerts
+    def audit(self, payload: SystemTaskPayload) -> List[AgentAlert]:
+        return ProtocolConformanceWorker.evaluate(payload)
 
 
 class MolecularDockingCoordinator:
-    """Executive Coordinator & Air-Gapped Supervisory Intelligence."""
+    """Backward-compatible audit adapter, unrelated to pose scoring."""
+
     def __init__(self):
-        self.sub_1 = BindingPocketGridAgent()
-        self.sub_2 = VinaEnergyScoreAgent()
-        self.sub_3 = TorsionalStrainPenaltyAgent()
+        self.supervisor = SystemSupervisor(model_provider="mock")
         self.execution_ledger: Dict[str, Dict[str, Any]] = {}
 
-    def process(self, payload: FrontierPayload) -> Dict[str, Any]:
-        all_alerts: List[AgentTelemetryAlert] = []
-        all_alerts.extend(self.sub_1.audit(payload))
-        all_alerts.extend(self.sub_2.audit(payload))
-        all_alerts.extend(self.sub_3.audit(payload))
-
-        crit_count = sum(1 for a in all_alerts if a.status == ExecutionStatus.CRITICAL_INTERVENTION)
-        warn_count = sum(1 for a in all_alerts if a.status == ExecutionStatus.ELEVATED_RISK)
-
-        if crit_count > 0:
-            status = ExecutionStatus.CRITICAL_INTERVENTION
-        elif warn_count > 0:
-            status = ExecutionStatus.ELEVATED_RISK
-        else:
-            status = ExecutionStatus.NOMINAL
-
-        dossier = {
-            "system": "molecular-docking-vina-scorer",
-            "domain": "Computational Chemistry & AI Drug Discovery",
-            "task_id": payload.task_id,
-            "target_identifier": payload.target_identifier,
-            "overall_status": status.value,
-            "total_alerts": len(all_alerts),
-            "critical_count": crit_count,
-            "warning_count": warn_count,
-            "alerts": [a.to_dict() for a in all_alerts],
-            "standard_specification": "AutoDock Vina Scoring Function 1.2",
-            "consensus_summary": f"Consensus evaluation completed across 3 sub-agents with status [{status.value}].",
+    def process(self, payload: SystemTaskPayload) -> Dict[str, Any]:
+        if isinstance(payload, dict):
+            payload = SystemTaskPayload.model_validate(payload)
+        dossier = self.supervisor.process_task(payload)
+        warnings = sum(a.urgency.value == "ELEVATED_RISK" for a in dossier.alerts)
+        result = {
+            "system": dossier.system_slug,
+            "domain": dossier.domain,
+            "task_id": dossier.task_id,
+            "target_identifier": dossier.target_identifier,
+            "overall_status": dossier.overall_urgency.value,
+            "total_alerts": dossier.total_alerts,
+            "critical_count": dossier.critical_alerts_count,
+            "warning_count": warnings,
+            "alerts": [a.to_dict() for a in dossier.alerts],
+            "standard_specification": dossier.standard_reference,
+            "consensus_summary": dossier.consensus_summary,
         }
-
-        self.execution_ledger[payload.task_id] = dossier
-        return dossier
+        self.execution_ledger[payload.task_id] = result
+        return result
 
     def query_supervisory_chat(self, query: str) -> str:
-        q = query.strip().lower()
-        if "status" in q or "ledger" in q:
-            return f"VinaScore-Agent: Autonomous Small Molecule Receptor Binding Affinity Predictor currently managing {len(self.execution_ledger)} execution tasks in air-gapped memory."
-        elif "standard" in q or "spec" in q:
-            return "Active runtime operating strictly according to AutoDock Vina Scoring Function 1.2 specifications."
-        else:
-            return f"VinaScore-Agent: Autonomous Small Molecule Receptor Binding Affinity Predictor executive coordinator online. Zero-telemetry on-premises surveillance active."
+        return self.supervisor.query_supervisory_chat(query)
