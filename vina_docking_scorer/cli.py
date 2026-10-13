@@ -36,8 +36,17 @@ def _load_molecules(filepath: str):
     if not isinstance(data, dict):
         raise ValueError("Input JSON must be an object with 'ligand' and 'receptor' keys")
 
+    if not isinstance(data.get("ligand"), dict) or not isinstance(data.get("receptor"), dict):
+        raise ValueError("Input JSON must include ligand and receptor objects")
+    if not isinstance(data["ligand"].get("atoms"), list) or not isinstance(data["receptor"].get("atoms"), list):
+        raise ValueError("ligand.atoms and receptor.atoms must be arrays")
+    if not data["ligand"]["atoms"] or not data["receptor"]["atoms"]:
+        raise ValueError("Both ligand and receptor must have at least one atom")
+    if len(data["ligand"]["atoms"]) > 128 or len(data["receptor"]["atoms"]) > 128:
+        raise ValueError("Maximum 128 atoms per molecule")
+
     ligand_atoms = []
-    for a in data.get('ligand', {}).get('atoms', []):
+    for a in data['ligand']['atoms']:
         ligand_atoms.append(Atom(
             element=a['element'], x=a['x'], y=a['y'], z=a['z'],
             atom_type=a.get('type', ''),
