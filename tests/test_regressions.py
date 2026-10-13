@@ -97,3 +97,28 @@ def test_cli_zero_rotatable_override(tmp_path, capsys):
     assert main(["score", "-i", str(source), "--rotatable", "0", "--json"]) == 0
     output = json.loads(capsys.readouterr().out)
     assert output["score_components"]["torsional"] == 0.0
+
+
+def test_old_coordinator_is_importable_and_uses_supported_models():
+    from agents.models import SystemTaskPayload
+    from vina_docking_scorer.agents import MolecularDockingCoordinator
+    coordinator = MolecularDockingCoordinator()
+    report = coordinator.process(SystemTaskPayload(
+        task_id="COMPAT-1", target_identifier="CHEM-1", primary_metric=2.0
+    ))
+    assert report["task_id"] == "COMPAT-1"
+    assert report["overall_status"] == "ROUTINE"
+    assert report["total_alerts"] == 0
+
+
+def test_cli_rejects_non_docking_audit_payload(tmp_path):
+    path = tmp_path / "audit-task.json"
+    path.write_text(json.dumps({"task_id": "TASK-1", "primary_metric": 12}))
+    with pytest.raises(ValueError, match="ligand and receptor"):
+        main(["score", "-i", str(path)])
+
+
+def test_audit_rejects_non_finite_measurements():
+    client = TestClient(create_app())
+    body = {"task_id": "A", "target_identifier": "B", "primary_metric": "NaN"}
+    assert client.post("/api/audit", json=body).status_code == 422
