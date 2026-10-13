@@ -1,216 +1,85 @@
 # Molecular Docking Vina Scorer
 
-> **Domain:** Computational Biology & AI Drug Discovery
-> **Reference Guidelines & Standards:** `wwPDB, IUPAC & CLSI Computational Guidelines`
+A deterministic, **Vina-like pose scoring demonstrator** with a Python command-line interface, a FastAPI service, and an entirely client-side browser calculator.
 
-<div align="center">
+The browser source is in [web/](web/). GitHub Pages deployment is defined in [pages.yml](.github/workflows/pages.yml); a public URL should only be added once deployment is enabled and verified.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-3776AB.svg?logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688.svg?logo=fastapi&logoColor=white)
-![Audit Trail](https://img.shields.io/badge/Audit-HMAC--SHA256_Tamper--Evident-brightgreen.svg)
-![Zero-PHI Guard](https://img.shields.io/badge/Guard-Zero--PHI_Outbound-blue.svg)
-![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)
+## Scientific scope and limitations
 
-</div>
+Given **already positioned** ligand and receptor atoms (Cartesian Å coordinates), the project sums simplified Gaussian, steric repulsion, hydrophobic, and donor–acceptor interaction terms, plus a rotatable-bond penalty. It also provides Lipinski/Veber screening and descriptor-based ADMET heuristics.
 
----
+**It does not perform AutoDock Vina docking**, conformer search, pose optimization, receptor preparation, atom typing based on chemistry, or validated affinity prediction. Its potential uses fixed distance centers rather than full Vina atom-type-specific surface distances. The apparent Ki/Kd values are illustrative applications of `exp(ΔG/RT)` to the heuristic score—not experimentally calibrated binding constants. Descriptor-based ADMET labels are not validated clinical or toxicological predictions. Use only for education, testing, and exploratory analysis.
 
-## 📖 What It Does
+## Browser calculator
 
-**Molecular Docking Vina Scorer** is a computational platform implementing AutoDock Vina scoring potential (Gauss1/2, repulsion, H-bonding) for receptor binding prediction. It provides:
-
-- **Vina-like Scoring Engine**: Deterministic calculation of docking scores using Gaussian-based potentials
-- **Binding Affinity Prediction**: Convert docking scores to Ki/Kd values with classification
-- **Lipinski Rule of 5**: Drug-likeness evaluation with violation details
-- **ADMET Estimation**: Simplified absorption, distribution, metabolism, excretion, and toxicity prediction
-- **Enterprise Audit System**: HMAC-SHA256 tamper-evident audit trail with PHI outbound guard
-
----
-
-## ⚙️ Key Capabilities & Algorithmic Modules
-
-- **Deterministic Calculation Engine**: Vina scoring function implementation with Gauss1/2, repulsion, hydrophobic, and hydrogen bonding terms
-- **Binding Affinity Conversion**: ΔG to Ki/Kd calculation with classification (very_strong to very_weak)
-- **Drug-Likeness Evaluation**: Lipinski Rule of 5 and extended Veber rules
-- **ADMET Property Estimation**: Empirical rules for absorption, distribution, metabolism, excretion, and toxicity
-- **Zero-PHI Outbound Guard**: Active regex inspection blocking SSNs, MRNs, phone numbers, and patient identifiers
-- **Tamper-Evident Audit Trail**: Chained HMAC-SHA256 signed logs for every evaluation
-
----
-
-## 🚀 Installation
+Run locally with an HTTP server (ES modules should not be opened using `file://`):
 
 ```bash
-# Clone the repository
-git clone https://github.com/abusuraihsakhri/molecular-docking-vina-scorer.git
-cd molecular-docking-vina-scorer
-
-# Install dependencies
-pip install -e .
-
-# For development with tests
-pip install -e ".[test]"
+python -m http.server 8080 --directory web
 ```
 
----
+Open `http://localhost:8080/`. Paste a JSON structure containing ligand/receptor atoms, optionally open a local JSON file, calculate the score, inspect the components and estimated descriptors, and download the result as JSON. Each molecule is limited to **128 atoms**. All calculator operations run locally in JavaScript; no uploads or API keys are needed. The separate supervisory audit form requires the Python server and is unavailable on static GitHub Pages.
 
-## 💻 CLI Quickstart & Usage
+**Browser requirements:** modern browsers supporting JavaScript ES modules. Browser calculations are implemented in JavaScript rather than Pyodide, avoiding large Python/WASM downloads and native chemistry dependencies.
 
-### 1. Calculate Docking Score
+## Python install and CLI
+
+Requires Python 3.9+:
+
 ```bash
-python cli.py score -i sample_payload.json
-python cli.py score -i sample_payload.json --json
-```
-
-### 2. Evaluate Lipinski Rule of 5
-```bash
+python -m pip install -e ".[test]"
+python -m pytest -q
+python cli.py score -i sample_docking.json --json
+python cli.py score -i sample_docking.json --rotatable 0
 python cli.py lipinski --mw 300 --logp 2.5 --hbd 2 --hba 4
-python cli.py lipinski --mw 300 --logp 2.5 --hbd 2 --hba 4 --json
+python cli.py admet --mw 300 --logp 2.5 --hbd 2 --hba 4 --psa 80
+python cli.py affinity --delta-g -7 --temperature 298.15
 ```
 
-### 3. Estimate ADMET Properties
-```bash
-python cli.py admet --mw 300 --logp 2.5 --hbd 2 --hba 4 --psa 80 --rotatable 3
-python cli.py admet --mw 300 --logp 2.5 --hbd 2 --hba 4 --json
-```
+`sample_docking.json` demonstrates the expected scoring input. The distinct `sample_payload.json` is an **audit task**, not valid docking data. Ligand properties are optional: `rotatable_bonds`, `mw`, `logp`, `hbd`, `hba`, `psa`. Coordinates are in Å, score in arbitrary kcal/mol-like units, temperature in Kelvin.
 
-### 4. Calculate Binding Affinity from ΔG
-```bash
-python cli.py affinity --delta-g -7.0
-python cli.py affinity --delta-g -7.0 --temperature 298.15 --json
-```
+## API and audit service
 
-### 5. Enterprise Audit Commands
-```bash
-# Run task through enterprise supervisor
-python cli.py audit --task-id TASK-001
-
-# Query supervisory chat
-python cli.py chat "Explain specifications"
-
-# Verify audit trail integrity
-python cli.py verify-audit
-```
-
-### Input Data Schema (for score command)
-
-The score command expects a JSON file with the following structure:
-
-```json
-{
-  "ligand": {
-    "atoms": [
-      {"element": "C", "x": 0, "y": 0, "z": 0, "hydrophobic": true},
-      {"element": "N", "x": 1.5, "y": 0, "z": 0, "donor": true}
-    ],
-    "properties": {"rotatable_bonds": 2}
-  },
-  "receptor": {
-    "atoms": [
-      {"element": "C", "x": 3, "y": 0, "z": 0, "hydrophobic": true},
-      {"element": "O", "x": 3, "y": 2, "z": 0, "acceptor": true}
-    ]
-  }
-}
-```
-
----
-
-## 🌐 REST API Server
-
-Start the FastAPI server:
+Start the local API:
 
 ```bash
-python -m uvicorn vina_docking_scorer.server:create_app --factory --host 0.0.0.0 --port 8000
+python -m uvicorn vina_docking_scorer.server:create_app --factory --host 127.0.0.1 --port 8000
 ```
 
-Or using Docker:
+Open `http://127.0.0.1:8000/` for the browser calculator or `/docs` for interactive API documentation.
+
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /health` | Server health |
+| `POST /api/score` | Score ligand/receptor JSON (same schema as the example, with optional top-level `temperature`) |
+| `POST /api/audit` | Generic operational-threshold audit, separate from docking |
+| `POST /api/chat` | Deterministic mock supervisory response |
+| `GET /api/audit/logs` | In-memory audit trail and integrity status |
+| `GET /metrics` | Simple operational counters (JSON) |
+
+The audit subsystem implements simple rules and a chained HMAC-SHA256 signature log. **It is not an authenticated, persistent, regulatory-grade audit service**: logs and the randomly generated fallback key are lost on restart, and the PHI regex checks are incomplete safeguards rather than guaranteed de-identification or HIPAA compliance. The mock conversational response is not a validated inference service.
+
+For Docker Compose, set a strong random `AUDIT_SECRET_KEY` before starting:
 
 ```bash
-docker-compose up
+export AUDIT_SECRET_KEY="$(python -c 'import secrets; print(secrets.token_hex(32))')"
+docker compose up --build
 ```
 
-### API Endpoints
+The Compose port is bound to localhost by default. Do not expose the unauthenticated audit API to the public internet. Keep sensitive patient information out of demo requests.
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/health` | Health check |
-| POST | `/api/audit` | Process task through enterprise supervisor |
-| POST | `/api/chat` | Query supervisory chat interface |
-
----
-
-## 🛡️ Security Architecture
-
-* **Zero-PHI Outbound Interceptor:** Active regex inspection blocking SSNs, MRNs, phone numbers, emails, DOBs, and patient identifiers.
-* **Tamper-Evident HMAC-SHA256 Audit Trail:** Chained, cryptographically signed logs for every evaluation and state transition.
-* **Secure Key Management:** Audit signing key sourced from `AUDIT_SECRET_KEY` environment variable (no hardcoded secrets in production).
-
----
-
-## 🧪 Testing & Verification
-
-Run the automated test suite:
+## Development and tests
 
 ```bash
-pytest -v
+python -m pytest -q
+node --check web/calculator.mjs
+node --test web/test_calculator.mjs
 ```
 
-Run with coverage:
+GitHub Actions runs Python tests across supported interpreter versions, package-install checks, and Node browser-calculator tests. The [Pages workflow](.github/workflows/pages.yml) publishes the `web/` folder when GitHub Pages is enabled for GitHub Actions. A normal production FastAPI deployment requires a server or container and cannot run on GitHub Pages.
 
-```bash
-pytest -v --tb=short
-```
+## Privacy and license
 
-Execute high-throughput batch simulation benchmarks:
+The static calculator processes user-supplied JSON entirely in the browser and does not send it to a server. The optional backend audit explicitly sends entered fields to the configured FastAPI service. No external inference provider is used by the current mock implementation.
 
-```bash
-python simulator.py 1000
-```
-
----
-
-## 🐳 Container Deployment
-
-```bash
-docker build -t molecular-docking-vina-scorer .
-docker run -p 8000:8000 -e AUDIT_SECRET_KEY=your-secret-key molecular-docking-vina-scorer
-```
-
-Using docker-compose:
-
-```bash
-AUDIT_SECRET_KEY=your-secret-key docker-compose up
-```
-
----
-
-## 📁 Project Structure
-
-```
-molecular-docking-vina-scorer/
-├── vina_docking_scorer/    # Core scoring engine
-│   ├── engine.py           # Vina scoring, Lipinski, ADMET algorithms
-│   ├── cli.py              # Command-line interface
-│   ├── server.py           # FastAPI REST server
-│   └── models.py           # Data model re-exports
-├── agents/                 # Enterprise agent system
-│   ├── base.py             # PHI guard, HMAC audit trail
-│   ├── models.py           # Pydantic schemas
-│   ├── supervisor.py       # Multi-agent orchestrator
-│   ├── workers.py          # Specialized evaluation workers
-│   ├── llm_factory.py      # LLM provider abstraction
-│   └── ...
-├── tests/                  # Test suite
-├── web/                    # Operations console (HTML)
-├── cli.py                  # Top-level CLI entry point
-├── simulator.py            # Batch simulation
-└── enrichment.py           # Domain enrichment features
-```
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see [LICENSE](LICENSE) for details.
+Licensed under the [MIT License](LICENSE).
